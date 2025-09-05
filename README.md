@@ -2,22 +2,28 @@
 
 Welcome to ALX Polly, a full-stack polling application built with Next.js, TypeScript, and Supabase. This project serves as a practical learning ground for modern web development concepts, with a special focus on identifying and fixing common security vulnerabilities.
 
-## About the Application
+## 📋 Project Overview
 
-ALX Polly allows authenticated users to create, share, and vote on polls. It's a simple yet powerful application that demonstrates key features of modern web development:
+ALX Polly is a comprehensive polling platform that enables users to create, share, and participate in polls. The application features user authentication, poll management, real-time voting, and a responsive dashboard interface.
 
--   **Authentication**: Secure user sign-up and login.
--   **Poll Management**: Users can create, view, and delete their own polls.
--   **Voting System**: A straightforward system for casting and viewing votes.
--   **User Dashboard**: A personalized space for users to manage their polls.
+### Key Features
 
-The application is built with a modern tech stack:
+- **User Authentication**: Secure registration and login system with session management
+- **Poll Creation**: Dynamic form for creating polls with 2-10 customizable options
+- **Voting System**: One-vote-per-user-per-poll with real-time result updates
+- **User Dashboard**: Personal space to manage created polls with edit/delete capabilities
+- **Admin Features**: Administrative controls for poll moderation
+- **Responsive Design**: Mobile-first UI that works across all device sizes
 
--   **Framework**: [Next.js](https://nextjs.org/) (App Router)
--   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Backend & Database**: [Supabase](https://supabase.io/)
--   **UI**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
--   **State Management**: React Server Components and Client Components
+## 🛠️ Tech Stack
+
+- **Frontend Framework**: [Next.js 15](https://nextjs.org/) with App Router
+- **Language**: [TypeScript](https://www.typescriptlang.org/) with strict mode
+- **Database & Backend**: [Supabase](https://supabase.io/) with PostgreSQL
+- **Authentication**: Supabase Auth with cookie-based sessions
+- **UI Components**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **State Management**: React Server Components + Server Actions
+- **Deployment**: Optimized for Vercel deployment
 
 ---
 
@@ -59,38 +65,193 @@ A good security audit involves both static code analysis and dynamic testing. He
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
-To begin your security audit, you'll need to get the application running on your local machine.
+### Prerequisites
 
-### 1. Prerequisites
+- **Node.js** (v20.x or higher) - [Download](https://nodejs.org/)
+- **npm** or **yarn** package manager
+- **Supabase Account** - [Sign up for free](https://supabase.io/)
 
--   [Node.js](https://nodejs.org/) (v20.x or higher recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
--   A [Supabase](https://supabase.io/) account (the project is pre-configured, but you may need your own for a clean slate).
+### Installation
 
-### 2. Installation
-
-Clone the repository and install the dependencies:
-
+1. **Clone the repository**:
 ```bash
 git clone <repository-url>
 cd alx-polly
-npm install
 ```
 
-### 3. Environment Variables
+2. **Install dependencies**:
+```bash
+npm install
+# or
+yarn install
+```
 
-The project uses Supabase for its backend. An environment file `.env.local` is needed.Use the keys you created during the Supabase setup process.
+### Supabase Setup
 
-### 4. Running the Development Server
+1. **Create a new Supabase project**:
+   - Go to [supabase.io](https://supabase.io) and create a new project
+   - Wait for the database to be provisioned
 
-Start the application in development mode:
+2. **Set up the database schema**:
+   Run these SQL commands in the Supabase SQL Editor:
 
+```sql
+-- Create polls table
+CREATE TABLE polls (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  options TEXT[] NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create votes table
+CREATE TABLE votes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  poll_id UUID REFERENCES polls(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  option_index INTEGER NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(poll_id, user_id)
+);
+
+-- Enable Row Level Security
+ALTER TABLE polls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (basic - may contain vulnerabilities for learning)
+CREATE POLICY "Users can view all polls" ON polls FOR SELECT USING (true);
+CREATE POLICY "Users can create polls" ON polls FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own polls" ON polls FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own polls" ON polls FOR DELETE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view all votes" ON votes FOR SELECT USING (true);
+CREATE POLICY "Users can vote" ON votes FOR INSERT WITH CHECK (auth.uid() = user_id);
+```
+
+### Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: For development
+NODE_ENV=development
+```
+
+**To find your Supabase credentials**:
+1. Go to your Supabase project dashboard
+2. Navigate to **Settings** → **API**
+3. Copy the **URL** and **anon public** key
+
+### Running the Application
+
+1. **Development server**:
 ```bash
 npm run dev
 ```
+Visit [http://localhost:3000](http://localhost:3000)
 
-The application will be available at `http://localhost:3000`.
+2. **Production build**:
+```bash
+npm run build
+npm start
+```
+
+3. **Type checking**:
+```bash
+npm run tsc
+```
+
+4. **Linting**:
+```bash
+npm run lint
+```
+
+## 💡 Usage Examples
+
+### Creating an Account
+1. Navigate to `/register`
+2. Fill in your name, email, and password
+3. Click "Register" (email verification may be required)
+
+### Creating a Poll
+1. Log in and go to the dashboard
+2. Click "Create New Poll"
+3. Enter your poll question (max 500 characters)
+4. Add 2-10 options (each max 200 characters)
+5. Click "Create Poll"
+
+### Voting on Polls
+1. Browse to any poll page
+2. Select your preferred option
+3. Click "Submit Vote"
+4. View real-time results with percentage breakdowns
+
+### Managing Your Polls
+1. Visit the "My Polls" dashboard
+2. Click on any poll card to view details
+3. Use "Edit" to modify questions/options
+4. Use "Delete" to permanently remove polls
+
+## 🧪 Testing the Application
+
+### Manual Testing Checklist
+
+**Authentication Flow**:
+- [ ] User registration with valid/invalid data
+- [ ] Login with correct/incorrect credentials
+- [ ] Session persistence across page reloads
+- [ ] Logout functionality
+
+**Poll Management**:
+- [ ] Create polls with various option counts
+- [ ] Edit existing polls
+- [ ] Delete polls (own vs others)
+- [ ] View poll details and results
+
+**Voting System**:
+- [ ] Vote on polls as different users
+- [ ] Attempt duplicate voting
+- [ ] View updated results immediately
+
+**Security Testing**:
+- [ ] Access controls (unauthorized actions)
+- [ ] Input validation (XSS, SQL injection attempts)
+- [ ] Session management (expired tokens)
+- [ ] Admin functionality boundaries
+
+### Browser Testing
+Test across multiple browsers:
+- Chrome/Chromium
+- Firefox
+- Safari
+- Edge
+
+### Mobile Responsiveness
+Test on various screen sizes:
+- Mobile (320px+)
+- Tablet (768px+)
+- Desktop (1024px+)
+
+## 🔧 Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run tsc` | Type check with TypeScript |
+
+---
+
+## 🚀 The Challenge: Security Audit & Remediation
 
 Good luck, engineer! This is your chance to step into the shoes of a security professional and make a real impact on the quality and safety of this application. Happy hunting!
