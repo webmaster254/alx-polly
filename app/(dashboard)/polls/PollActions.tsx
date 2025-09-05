@@ -1,15 +1,14 @@
-"use client";
-
 import Link from "next/link";
-import { useAuth } from "@/app/lib/context/auth-context";
 import { Button } from "@/components/ui/button";
-import { deletePoll } from "@/app/lib/actions/poll-actions";
+import PollDeleteButton from "./PollDeleteButton";
 
 interface Poll {
   id: string;
   question: string;
   options: any[];
   user_id: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 interface PollActionsProps {
@@ -17,14 +16,6 @@ interface PollActionsProps {
 }
 
 export default function PollActions({ poll }: PollActionsProps) {
-  const { user } = useAuth();
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this poll?")) {
-      await deletePoll(poll.id);
-      window.location.reload();
-    }
-  };
-
   return (
     <div className="border rounded-md shadow-md hover:shadow-lg transition-shadow bg-white">
       <Link href={`/polls/${poll.id}`}>
@@ -39,14 +30,16 @@ export default function PollActions({ poll }: PollActionsProps) {
           </div>
         </div>
       </Link>
-      {user && user.id === poll.user_id && (
+      {(poll.canEdit || poll.canDelete) && (
         <div className="flex gap-2 p-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/polls/${poll.id}/edit`}>Edit</Link>
-          </Button>
-          <Button variant="destructive" size="sm" onClick={handleDelete}>
-            Delete
-          </Button>
+          {poll.canEdit && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/polls/${poll.id}/edit`}>Edit</Link>
+            </Button>
+          )}
+          {poll.canDelete && (
+            <PollDeleteButton pollId={poll.id} />
+          )}
         </div>
       )}
     </div>
